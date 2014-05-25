@@ -1,6 +1,7 @@
 'use strict';
 
 var d3 = require('d3');
+var _ = require('underscore');
 var Node = require('./node');
 var Line = require('./line');
 
@@ -13,10 +14,20 @@ var Board = function(game, parent) {
     .attr({
       'width': game.width,
       'height': game.height
+    })
+    .style({
+      'top': 0,
+      'left': 0,
+      'position': 'absolute',
+      'backface-visibility': 'hidden',
+      'transform-origin': '50% 50%',
     });
 
   this.nodes = [];
   this.lines = [];
+  this.connections = [];
+
+  this.active = true;
 
   this.cols = 3
   this.rows = 4;
@@ -33,40 +44,91 @@ var Board = function(game, parent) {
   }
 }
 
+Board.prototype.setActive = function(active) {
+  this.active = active;
+}
+
 Board.prototype.selectNode = function(node) {
-  if(this.selectedNode === null) {
-    this.selectedNode = node;
-
-    var x = node.x() + 25;
-    var y = node.y() + 25;
-    this.selectedNodeLine = new Line(this.game, this, x, y, x, y, node.color);
-
-    node.inner.transition().attr('r', 8);
+  if(this.connections.length == 0 || typeof _.last(this.connections).end !== 'undefined') {
+    this.beginConnection(node);
   }
   else {
+    var connection = _.last(this.connections);
 
-    this.selectedNode.inner
-      .transition()
-      .attr('r', 25);
-    
-    node.inner
-      .transition()
-      .delay(50)
-      .attr('r', 25);
-
-    this.selectedNodeLine.element
-      .transition()
-      .duration(150)
-      .attr({
-        'x2': node.x() + 25,
-        'y2': node.y() + 25
-      })
-      
-    this.selectedNode = null;
-
-    var otherBoard = this.parent.getOtherBoard(this);
-    otherBoard.selectNode(otherBoard.getNode(node.col, node.row));
+    if(this.isLegalConnection(connection.begin, node) && this.active) {
+      this.endConnection(node);
+    }
   }
+}
+
+Board.prototype.isLegalConnection = function(beginNode, endNode) {
+  if(beginNode.color !== endNode.color) {
+    console.log('illegal: different color');
+    return false;
+  }
+
+  var x1 = beginNode.x() + 25;
+  var y1 = beginNode.y() + 25;
+  var x2 = endNode.x() + 25;
+  var y2 = endNode.y() + 25;
+
+  for(var i = 0; i < this.lines.length; i++) {
+    var line = this.lines[i];
+
+    if(line.isIntersecting(x1, y1, x2, y2)) {
+      console.log('illegal: intersecting');
+      return false;
+    }
+  }
+
+  return true;
+}
+
+Board.prototype.beginConnection = function(node) {
+  this.connections.push({
+    begin: node
+  });
+
+  node.inner.transition().attr('r', 8);
+}
+
+Board.prototype.endConnection = function(node) {
+  var self = this;
+
+  var connection = _.last(this.connections);
+  connection.end = node;
+
+  var x1 = connection.begin.x() + 25;
+  var y1 = connection.begin.y() + 25;
+  var x2 = connection.end.x() + 25;
+  var y2 = connection.end.y() + 25;
+
+  var otherBoard = this.parent.getOtherBoard(this);
+
+  var line = new Line(this.game, this, x1, y1, x1, y1, connection.begin.color);
+  this.lines.push(line);
+
+  connection.begin.inner
+    .transition()
+    .attr('r', 25);
+
+  connection.end.inner
+    .transition()
+    .delay(50)
+    .attr('r', 25);
+
+  line.element
+    .transition()
+    .duration(150)
+    .attr({
+      'x2': x2,
+      'y2': y2
+    }).
+    each('end', function() {
+      self.parent.rotateBoards('right', function() {
+        otherBoard.beginConnection(otherBoard.getNode(node.col, node.row));
+      });
+    });
 }
 
 Board.prototype.getNode = function(col, row) {

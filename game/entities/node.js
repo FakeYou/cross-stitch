@@ -48,7 +48,6 @@ var Node = function(game, parent, row, col, x, y) {
 }
 
 Node.prototype.onTap = function(event) {
-  console.log('tap');
   this.parent.selectNode(this);
 }
 
