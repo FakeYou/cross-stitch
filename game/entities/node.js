@@ -18,8 +18,17 @@ var Node = function(game, parent, row, col, x, y) {
     });
 
   Hammer(this.element.node()).on('tap', function(event) {
+    console.log('hammer click');
     self.onTap.call(self, event);
   })
+
+  this.element.on('click', function() {
+    console.log('d3 click');
+  });
+
+  this.element[0][0].addEventListener('click', function() {
+    console.log('vanilla click');
+  });
 
   var colors = ['#FFC82C', '#69D2E7', '#F06048', '#AEE239'];
   this.color = colors[Math.floor(Math.random() * colors.length)];
@@ -34,6 +43,18 @@ var Node = function(game, parent, row, col, x, y) {
       'fill': 'transparent',
       'stroke': '#DDD',
       'stroke-width': 1
+    });
+
+  this.hint = this.element.append('circle')
+    .attr({
+      'cx': 8,
+      'cy': 8,
+      'r': 4
+    })
+    .style({
+      'stroke': '#FFFFFF',
+      'stroke-width': 4,
+      'fill': colors[Math.floor(Math.random() * colors.length)]
     });
 
   this.inner = this.element.append('circle')

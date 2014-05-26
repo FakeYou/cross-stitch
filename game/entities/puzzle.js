@@ -26,7 +26,7 @@ var Puzzle = function(game, parent) {
   this.backBoard.element
     .style('transform', 'rotateY(180deg) scaleX(-1)');
 
-  Hammer(this.element.node()).on('swiperight swipeleft', function(event) {
+  Hammer(this.element.node()).on('dragright dragleft swiperight swipeleft', function(event) {
     self.onSwipe.call(self, event);
   })
 }
@@ -44,8 +44,6 @@ Puzzle.prototype.rotateBoards = function(direction, callback) {
   var self = this;
   var direction = direction || 'right';
   var otherBoard = this.frontBoard.active ? this.backBoard : this.frontBoard;
-
-  console.log(direction);
 
   if(this.frontBoard.active && direction == 'left') {
     var begin = 0;
@@ -76,14 +74,15 @@ Puzzle.prototype.rotateBoards = function(direction, callback) {
       })
       .each('end', function() {
         otherBoard.setActive(true);
-        callback();
+
+        if(typeof callback === 'function') {
+          callback();
+        }
       })
   }
 }
 
 Puzzle.prototype.onSwipe = function(event) {
-  console.log(event);
-
   this.rotateBoards(event.gesture.direction);
 }
 

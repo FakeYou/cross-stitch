@@ -62,6 +62,8 @@ Board.prototype.selectNode = function(node) {
 }
 
 Board.prototype.isLegalConnection = function(beginNode, endNode) {
+  return true;
+
   if(beginNode.color !== endNode.color) {
     console.log('illegal: different color');
     return false;
@@ -112,10 +114,19 @@ Board.prototype.endConnection = function(node) {
     .transition()
     .attr('r', 25);
 
+  connection.begin.hint
+    .transition()
+    .attr('r', 0);
+
   connection.end.inner
     .transition()
     .delay(50)
     .attr('r', 25);
+
+  connection.end.hint
+    .transition()
+    .delay(50)
+    .attr('r', 0);
 
   line.element
     .transition()
